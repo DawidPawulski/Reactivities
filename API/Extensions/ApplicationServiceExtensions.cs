@@ -13,6 +13,7 @@ using Application.Activities;
 using Application.Core;
 using Application.Interfaces;
 using Infrastructure.Security;
+using Infrastructure.Photos;
 
 namespace API.Extensions
 {
@@ -25,7 +26,7 @@ namespace API.Extensions
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebAPIv5", Version = "v1" });
             });
-            services.AddDbContext<DataContext>(opt => 
+            services.AddDbContext<DataContext>(opt =>
             {
                 opt.UseSqlite(config.GetConnectionString("DefaultConnection"));
             });
@@ -38,13 +39,13 @@ namespace API.Extensions
             });
 
             services.AddMediatR(typeof(List.Handler).Assembly);
-
             services.AddAutoMapper(typeof(MappingProfiles).Assembly);
-
             services.AddScoped<IUserAccessor, UserAccessor>();
+            services.AddScoped<IPhotoAccessor, PhotoAccessor>();
+            services.Configure<CloudinarySettings>(config.GetSection("Cloudinary"));
 
             return services;
         }
-        
+
     }
 }
