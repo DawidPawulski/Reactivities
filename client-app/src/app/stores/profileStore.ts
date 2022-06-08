@@ -1,16 +1,19 @@
 import { makeAutoObservable, reaction, runInAction } from "mobx";
 import agent from "../api/agent";
-import { Photo, Profile } from "../models/profile";
+import { Photo, Profile, UserActivity } from "../models/profile";
 import { store } from "./store";
 
 export default class ProfileStore {
+    currentUserProfile: Profile | null = null;
     profile: Profile | null = null;
     loadingProfile = false;
     uploading = false;
     loading = false;
     followings: Profile[] = [];
     loadingFollowings = false;
-    activeTab = 0;
+    activeTab: number = 0;
+    userActivities: UserActivity[] = [];
+    loadingActivities = false;
 
     constructor() {
         makeAutoObservable(this);
@@ -134,8 +137,8 @@ export default class ProfileStore {
             await agent.Profiles.updateFollowing(username);
             store.activityStore.updateAttendeeFollowing(username);
             runInAction(() => {
-                if (this.profile && this.profile.username !== store.userStore.user?.username 
-                        && this.profile.username === username) {
+                if (this.profile && this.profile.username !== store.userStore.user?.username
+                    && this.profile.username === username) {
                     following ? this.profile.followersCount++ : this.profile.followersCount--;
                     this.profile.following = !this.profile.following;
                 }
@@ -167,6 +170,23 @@ export default class ProfileStore {
         } catch (error) {
             console.log(error);
             runInAction(() => this.loadingFollowings = false);
+        }
+    }
+
+    loadUserActivities = async (username: string, predicate?: string) => {
+        this.loadingActivities = true;
+        try {
+            const activities = await agent.Profiles.listActivities(username,
+                predicate!);
+            runInAction(() => {
+                this.userActivities = activities;
+                this.loadingActivities = false;
+            })
+        } catch (error) {
+            console.log(error);
+            runInAction(() => {
+                this.loadingActivities = false;
+            })
         }
     }
 }
